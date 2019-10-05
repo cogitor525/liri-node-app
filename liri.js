@@ -4,25 +4,24 @@ require("dotenv").config();
 // import the `keys.js` file
 var keys = require("./keys.js");
 
+const axios = require('axios');
+
 let command = process.argv[2];
-let query = process.argv.slice(3);
+// the 'query' (4th CL argument) needs to be in quotes (" ")
+let query = process.argv[3];
 
 function runCommand() {
     switch(command) {
         case "concert-this":
-            console.log("run bandsintown");
-            // code
+            concertThis();
             break;
         case "spotify-this-song":
-            console.log("run spotify");
             // code
             break;
         case "movie-this":
-            console.log("run omdb");
             // code
             break;
         case "do-what-it-says":
-            console.log("read file");
             // code
             break;
         default:
@@ -41,7 +40,39 @@ runCommand();
 //          * Name of the venue
 //          * Venue location
 //          * Date of the Event (use moment to format this as "MM/DD/YYYY")
-//  
+
+function concertThis() {
+    if (!query) {
+        query = "Muse";
+    }
+    const url = "https://rest.bandsintown.com/artists/" + query + "/events?app_id=codingbootcamp";
+
+    function Event(venue, location, date) {
+        this.venue = venue;
+        this.location = location;
+        this.date = date;
+    }
+
+    axios.get(url)
+        .then(function(response) {
+            const data = response.data;
+            const events = data.map(function(currentValue, index) {
+                const venue = currentValue.venue.name;
+                const location = currentValue.venue.city + ", " + currentValue.venue.country;
+                const date = currentValue.datetime;
+                return new Event(venue, location, date); 
+            });
+            console.log(events[0]);
+            console.log(events[4]);
+        })
+        .catch(function(error) {
+            console.log(error);
+        })
+        .finally(function() {
+            console.log("finally code here");
+        });
+}
+
 //  * `node liri.js spotify-this-song '<song name here>'`
 //      This will show the following information about the song in your terminal/bash window
 //          * Artist(s)
