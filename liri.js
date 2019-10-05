@@ -5,6 +5,7 @@ require("dotenv").config();
 var keys = require("./keys.js");
 
 const axios = require('axios');
+const moment = require('moment');
 
 let command = process.argv[2];
 // the 'query' (4th CL argument) needs to be in quotes (" ")
@@ -56,14 +57,14 @@ function concertThis() {
     axios.get(url)
         .then(function(response) {
             const data = response.data;
-            const events = data.map(function(currentValue, index) {
+            const events = data.map(function(currentValue) {
                 const venue = currentValue.venue.name;
                 const location = currentValue.venue.city + ", " + currentValue.venue.country;
-                const date = currentValue.datetime;
+                const date = moment(currentValue.datetime).format("L");
                 return new Event(venue, location, date); 
             });
-            console.log(events[0]);
-            console.log(events[4]);
+            const header = "*** Upcoming concerts for " + query + " ***";
+            displayInfo(header, events);
         })
         .catch(function(error) {
             console.log(error);
@@ -71,6 +72,20 @@ function concertThis() {
         .finally(function() {
             console.log("finally code here");
         });
+}
+
+function displayInfo(header, info) {
+    const divider = "-------------------------------------------";    
+    console.log(header);
+    console.log(divider);
+
+    info.forEach(function(currentValue, index) {
+        console.log("\t== Event " + ++index + " ==");
+        for (let [key, value] of Object.entries(currentValue)) {
+            console.log(`${key}: ${value}`);
+        }
+        console.log(divider);
+    });
 }
 
 //  * `node liri.js spotify-this-song '<song name here>'`
