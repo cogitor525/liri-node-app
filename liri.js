@@ -19,7 +19,7 @@ function runCommand() {
             spotifyThis();
             break;
         case "movie-this":
-            // code
+            movieThis();
             break;
         case "do-what-it-says":
             // code
@@ -153,8 +153,53 @@ function spotifyThis() {
 //          * Plot of the movie.
 //          * Actors in the movie.
 //          * If the user doesn't type a movie in, the program will output data for the movie 'Mr. Nobody.'
-//          * OMDB API requires an API key. You may use `trilogy`.
-//
+
+function movieThis() {
+    if (!query) {
+        query = "Mr. Nobody";
+    }
+    const url = "http://www.omdbapi.com/?apikey=trilogy&t=" + query;
+
+    function Movie(title, year, imdbRating, tomatoRating, country, lang, plot, actors) {
+        this.title = title;
+        this.year = year;
+        this.IMDB_rating = imdbRating;
+        this.Rotten_Tomatoes_rating = tomatoRating;
+        this.country = country;
+        this.language = lang;
+        this.plot = plot;
+        this.actors = actors;
+    }
+
+    axios.get(url)
+        .then(function(response) {
+            const data = response.data;
+            const title = data.Title;
+            const year = data.Year;
+            const imdbRating = data.imdbRating;
+
+            // find index for Rotten Tomatoes rating within "Ratings" array
+            const indexTR = data.Ratings.findIndex(function(item) {
+                return item.Source == "Rotten Tomatoes";
+            });
+            const tomatoRating = data.Ratings[indexTR].Value;
+
+            const country = data.Country;
+            const lang = data.Language;
+            const plot = data.Plot;
+            const actors = data.Actors;
+
+            const movie = new Movie(title, year, imdbRating, tomatoRating, country, lang, plot, actors);
+            displayInfo(movie);
+        })
+        .catch(function(error) {
+            console.log(error);
+        })
+        .finally(function() {
+            console.log("finally code here");
+        });
+}
+
 //  * `node liri.js do-what-it-says`
 //      Using the `fs` Node package, LIRI will take the text inside of random.txt and then use it to call one of LIRI's commands.
 //          * It should run `spotify-this-song` for "I Want it That Way," as follows the text in `random.txt`.
