@@ -2,13 +2,12 @@
 require("dotenv").config();
 
 // import the `keys.js` file
-var keys = require("./keys.js");
+const keys = require("./keys.js");
 
 const axios = require('axios');
-const moment = require('moment');
 
 let command = process.argv[2];
-// the 'query' (4th CL argument) needs to be in quotes (" ")
+// the 'query' (4th CL argument) needs to be in quotes (" ") for multi-word entries
 let query = process.argv[3];
 
 function runCommand() {
@@ -17,7 +16,7 @@ function runCommand() {
             concertThis();
             break;
         case "spotify-this-song":
-            // code
+            spotifyThis();
             break;
         case "movie-this":
             // code
@@ -47,6 +46,7 @@ function concertThis() {
         query = "Muse";
     }
     const url = "https://rest.bandsintown.com/artists/" + query + "/events?app_id=codingbootcamp";
+    const moment = require('moment');
 
     function Event(venue, location, date) {
         this.venue = venue;
@@ -64,7 +64,7 @@ function concertThis() {
                 return new Event(venue, location, date); 
             });
             const header = "*** Upcoming concerts for " + query + " ***";
-            displayInfo(header, events);
+            displayInfo(events, header);
         })
         .catch(function(error) {
             console.log(error);
@@ -74,18 +74,28 @@ function concertThis() {
         });
 }
 
-function displayInfo(header, info) {
+function displayInfo(info, header) {
     const divider = "-------------------------------------------";    
-    console.log(header);
-    console.log(divider);
 
-    info.forEach(function(currentValue, index) {
-        console.log("\t== Event " + ++index + " ==");
-        for (let [key, value] of Object.entries(currentValue)) {
+    // this section runs if info is an array of objects (as occurs for concert events)
+    if (info.length) {
+        console.log(header);
+        console.log(divider);
+        info.forEach(function(currentValue, index) {
+            console.log("\t== Event " + ++index + " ==");
+            displayObject(currentValue);
+        });
+    // otherwise, info is a single object (as for a song or movie)
+    } else {
+        displayObject(info);
+    }
+
+    function displayObject(obj) {
+        for (let [key, value] of Object.entries(obj)) {
             console.log(`${key}: ${value}`);
         }
         console.log(divider);
-    });
+    }
 }
 
 //  * `node liri.js spotify-this-song '<song name here>'`
@@ -95,9 +105,43 @@ function displayInfo(header, info) {
 //          * A preview link of the song from Spotify
 //          * The album that the song is from
 //          * If no song is provided then your program will default to "The Sign" by Ace of Base.
-//      *** can access keys information with following ***
-//          var spotify = new Spotify(keys.spotify);
-//
+
+function spotifyThis() {
+    if (!query) {
+        query = "The Sign";
+    }
+    const Spotify = require('node-spotify-api');
+    const spotify = new Spotify(keys.spotify);
+
+    function Song(artist, song, link, album) {
+        this.artist = artist;
+        this.song = song;
+        this.preview_link = link;
+        this.album = album;
+    }
+
+    spotify.search({ type: 'track', query: query })
+        .then(function(response) {
+            const items = response.tracks.items;
+            // to sift out first exact match to query
+            const index = items.findIndex(function(item) {
+                return item.name.toUpperCase() == query.toUpperCase();
+            });
+            const track = items[index];
+
+            const artist = track.artists[0].name;
+            const title = track.name;
+            const link = track.preview_url;
+            const album = track.album.name;
+
+            const song = new Song(artist,title,link,album);
+            displayInfo(song);
+        })
+        .catch(function(err) {
+            console.log(err);
+        });
+}
+
 //  * `node liri.js movie-this '<movie name here>'`
 //      This will output the following information to your terminal/bash window:
 //          * Title of the movie.
