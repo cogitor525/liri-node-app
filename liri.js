@@ -4,6 +4,34 @@ require("dotenv").config();
 // import the `keys.js` file
 var keys = require("./keys.js");
 
+let command = process.argv[2];
+let query = process.argv.slice(3);
+
+function runCommand() {
+    switch(command) {
+        case "concert-this":
+            console.log("run bandsintown");
+            // code
+            break;
+        case "spotify-this-song":
+            console.log("run spotify");
+            // code
+            break;
+        case "movie-this":
+            console.log("run omdb");
+            // code
+            break;
+        case "do-what-it-says":
+            console.log("read file");
+            // code
+            break;
+        default:
+            console.log("Invalid command");
+    }
+}
+
+runCommand();
+
 // commands for liri.js
 // ====================
 //  * `node liri.js concert-this <artist/band name here>`
@@ -41,3 +69,5 @@ var keys = require("./keys.js");
 //      Using the `fs` Node package, LIRI will take the text inside of random.txt and then use it to call one of LIRI's commands.
 //          * It should run `spotify-this-song` for "I Want it That Way," as follows the text in `random.txt`.
 //          * Edit the text in random.txt to test out the feature for movie-this and concert-this.
+
+const fs = require('fs');
