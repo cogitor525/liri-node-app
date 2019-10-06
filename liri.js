@@ -7,8 +7,14 @@ const keys = require("./keys.js");
 const axios = require('axios');
 
 let command = process.argv[2];
-// the 'query' (4th CL argument) needs to be in quotes (" ") for multi-word entries
-let query = process.argv[3];
+let query = process.argv.slice(3);
+// the following code allows the '4th argument' (`query`) to be entered
+// either enclosed in quotes (" ") or not
+if (query.length > 1) {
+    query = query.join(" ");
+} else {
+    query = process.argv[3];
+}
 
 function runCommand() {
     switch(command) {
@@ -22,7 +28,7 @@ function runCommand() {
             movieThis();
             break;
         case "do-what-it-says":
-            // code
+            runFile();
             break;
         default:
             console.log("Invalid command");
@@ -33,7 +39,7 @@ runCommand();
 
 // commands for liri.js
 // ====================
-//  * `node liri.js concert-this <artist/band name here>`
+//  * `node liri.js concert-this "<artist/band name here>"`
 //      This will search the Bands in Town Artist Events API:
 //      (`"https://rest.bandsintown.com/artists/" + artist + "/events?app_id=codingbootcamp"`)
 //      for an artist and render the following information about each event to the terminal:
@@ -57,6 +63,12 @@ function concertThis() {
     axios.get(url)
         .then(function(response) {
             const data = response.data;
+
+            // exits with error msg if query term not found
+            if (data == '\n{warn=Not found}\n') {
+                return console.log(data);
+            }
+
             const events = data.map(function(currentValue) {
                 const venue = currentValue.venue.name;
                 const location = currentValue.venue.city + ", " + currentValue.venue.country;
@@ -67,10 +79,7 @@ function concertThis() {
             displayInfo(events, header);
         })
         .catch(function(error) {
-            console.log(error);
-        })
-        .finally(function() {
-            console.log("finally code here");
+            console.log(error.response.data);
         });
 }
 
@@ -123,6 +132,12 @@ function spotifyThis() {
     spotify.search({ type: 'track', query: query })
         .then(function(response) {
             const items = response.tracks.items;
+
+            // exits with error msg if `query` not found
+            if (items.length == 0) {
+                return console.log("Not found");
+            }
+
             // to sift out first exact match to query
             const index = items.findIndex(function(item) {
                 return item.name.toUpperCase() == query.toUpperCase();
@@ -174,6 +189,12 @@ function movieThis() {
     axios.get(url)
         .then(function(response) {
             const data = response.data;
+
+            // exits with error msg if query failed
+            if (data.Response == 'False') {
+                return console.log(data);
+            }
+
             const title = data.Title;
             const year = data.Year;
             const imdbRating = data.imdbRating;
@@ -194,9 +215,6 @@ function movieThis() {
         })
         .catch(function(error) {
             console.log(error);
-        })
-        .finally(function() {
-            console.log("finally code here");
         });
 }
 
@@ -205,4 +223,15 @@ function movieThis() {
 //          * It should run `spotify-this-song` for "I Want it That Way," as follows the text in `random.txt`.
 //          * Edit the text in random.txt to test out the feature for movie-this and concert-this.
 
-const fs = require('fs');
+function runFile() {
+    const fs = require('fs');
+
+    fs.readFile('random.txt', "utf8", function(err, data) {
+        if (err) { throw err; }
+        [command, query] = data.split(',');
+        // the quotes (" ") are removed from the query string, as they interfere with proper functionality
+        // (they might be used when executing from the CL Terminal for the '4th argument')
+        query = query.replace(/"/g, '');
+        runCommand();
+    });
+}
